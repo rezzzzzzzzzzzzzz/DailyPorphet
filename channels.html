@@ -25,16 +25,50 @@
         <h1>Channel Management</h1>
     </div>
 
-    <!-- Dashboard Stats (from previous step) -->
-    <div id="dashboard-stats" class="message-item" style="margin-bottom: 2rem;">
-        <p class="loading">Loading Dashboard Stats...</p>
+    <!-- Dashboard Stats -->
+    <div id="dashboard-stats" class="dashboard-stats-container">
+        <div class="stats-grid">
+            <div class="stat-card loading-card">
+                <div class="stat-icon">📊</div>
+                <div class="stat-content">
+                    <div class="stat-number">---</div>
+                    <div class="stat-label">Total Messages</div>
+                </div>
+            </div>
+            <div class="stat-card loading-card">
+                <div class="stat-icon">📺</div>
+                <div class="stat-content">
+                    <div class="stat-number">---</div>
+                    <div class="stat-label">Unique Channels</div>
+                </div>
+            </div>
+            <div class="stat-card loading-card">
+                <div class="stat-icon">⚡</div>
+                <div class="stat-content">
+                    <div class="stat-number">---</div>
+                    <div class="stat-label">Messages in Last 24h</div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Sorting and Filter Controls -->
     <div class="controls-container">
-        <div id="sort-controls">
-            <button id="sort-by-name" class="sort-btn active">Sort by Name</button>
-            <button id="sort-by-count" class="sort-btn">Sort by Count</button>
+        <div class="controls-header">
+            <h2>Channel Overview</h2>
+            <div class="sort-controls">
+                <span class="sort-label">Sort by:</span>
+                <div class="sort-buttons">
+                    <button id="sort-by-name" class="sort-btn active">
+                        <span class="sort-icon">🔤</span>
+                        Name
+                    </button>
+                    <button id="sort-by-count" class="sort-btn">
+                        <span class="sort-icon">📊</span>
+                        Message Count
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 

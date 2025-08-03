@@ -11,28 +11,89 @@ let currentSort = 'name'; // 'name' or 'count'
 
 // --- DASHBOARD STATS ---
 async function loadDashboardStats() {
-    const statsContainer = document.getElementById('dashboard-stats');
     try {
+        console.log('🔄 Loading dashboard stats...');
+        
+        // Update stat cards to show loading state
+        const statCards = document.querySelectorAll('.stat-card');
+        statCards.forEach(card => card.classList.add('loading-card'));
+        
+        // Fetch all stats in parallel for better performance
         const [totalMessagesRes, uniqueChannelsRes, recentMessagesRes] = await Promise.all([
             supabase.from('messages').select('*', { count: 'exact', head: true }),
             supabase.rpc('get_channel_stats'), // Use our RPC to get unique channel count easily
             supabase.from('messages').select('*', { count: 'exact', head: true }).gte('sent_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
         ]);
 
-        const totalMessagesCount = totalMessagesRes.count;
-        const uniqueChannelCount = uniqueChannelsRes.data.length;
-        const recentMessagesCount = recentMessagesRes.count;
+        const totalMessagesCount = totalMessagesRes.count || 0;
+        const uniqueChannelCount = uniqueChannelsRes.data?.length || 0;
+        const recentMessagesCount = recentMessagesRes.count || 0;
 
-        statsContainer.innerHTML = `
-            <div style="display: flex; justify-content: space-around; text-align: center; flex-wrap: wrap; gap: 1rem;">
-                <div><h3 class="dashboard-stat-number">${totalMessagesCount.toLocaleString()}</h3><p class="dashboard-stat-label">Total Messages</p></div>
-                <div><h3 class="dashboard-stat-number">${uniqueChannelCount.toLocaleString()}</h3><p class="dashboard-stat-label">Unique Channels</p></div>
-                <div><h3 class="dashboard-stat-number">${recentMessagesCount.toLocaleString()}</h3><p class="dashboard-stat-label">Messages in Last 24h</p></div>
-            </div>`;
+        console.log('✅ Dashboard stats loaded:', {
+            totalMessages: totalMessagesCount,
+            uniqueChannels: uniqueChannelCount,
+            recentMessages: recentMessagesCount
+        });
+
+        // Update the stat cards with real data
+        const statNumbers = document.querySelectorAll('.stat-number');
+        const statData = [
+            totalMessagesCount.toLocaleString(),
+            uniqueChannelCount.toLocaleString(),
+            recentMessagesCount.toLocaleString()
+        ];
+        
+        // Animate number updates
+        statNumbers.forEach((numberElement, index) => {
+            if (statData[index]) {
+                // Remove loading state
+                numberElement.closest('.stat-card').classList.remove('loading-card');
+                
+                // Animate the number change
+                animateNumber(numberElement, statData[index]);
+            }
+        });
+        
     } catch (error) {
-        console.error('Error loading dashboard stats:', error);
-        statsContainer.innerHTML = '<p class="error">Could not load dashboard stats.</p>';
+        console.error('❌ Error loading dashboard stats:', error);
+        
+        // Show error state on all cards
+        const statNumbers = document.querySelectorAll('.stat-number');
+        statNumbers.forEach(numberElement => {
+            numberElement.closest('.stat-card').classList.remove('loading-card');
+            numberElement.textContent = 'Error';
+            numberElement.style.color = '#f87171';
+        });
     }
+}
+
+// Animate number changes for a smooth effect
+function animateNumber(element, finalValue) {
+    const duration = 1000; // 1 second
+    const startTime = performance.now();
+    const startValue = 0;
+    
+    // Parse the final value (remove commas for calculation)
+    const finalNum = parseInt(finalValue.replace(/,/g, ''));
+    
+    function updateNumber(currentTime) {
+        const elapsed = currentTime - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        
+        // Easing function for smooth animation
+        const easeProgress = 1 - Math.pow(1 - progress, 3);
+        const currentValue = Math.floor(startValue + (finalNum - startValue) * easeProgress);
+        
+        element.textContent = currentValue.toLocaleString();
+        
+        if (progress < 1) {
+            requestAnimationFrame(updateNumber);
+        } else {
+            element.textContent = finalValue; // Ensure final value is exact
+        }
+    }
+    
+    requestAnimationFrame(updateNumber);
 }
 
 // --- CHANNEL LIST RENDERING ---
