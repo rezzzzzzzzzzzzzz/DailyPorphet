@@ -94,6 +94,60 @@ async function getAllChannels() {
 }
 
 /**
+ * Get blacklisted channels with detailed information
+ */
+async function getBlacklistedChannelsWithDetails() {
+    try {
+        // Get blacklisted channels
+        const { data: blacklisted, error: blacklistedError } = await supabase
+            .from('blacklisted_channels')
+            .select('*')
+            .order('created_at', { ascending: false });
+
+        if (blacklistedError) throw blacklistedError;
+
+        // Get channel details from messages table
+        const channelsWithDetails = [];
+        
+        for (const blacklistedChannel of blacklisted) {
+            // Get channel info from messages table
+            const { data: channelInfo, error: channelError } = await supabase
+                .from('messages')
+                .select('channel_id, channel_name')
+                .eq('channel_id', blacklistedChannel.channel_id)
+                .limit(1);
+
+            if (!channelError && channelInfo && channelInfo.length > 0) {
+                // Get message count for this channel
+                const { count: messageCount, error: countError } = await supabase
+                    .from('messages')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('channel_id', blacklistedChannel.channel_id);
+
+                channelsWithDetails.push({
+                    ...blacklistedChannel,
+                    channel_name: channelInfo[0].channel_name,
+                    message_count: countError ? 0 : (messageCount || 0)
+                });
+            } else {
+                // Channel not found in messages, still show basic info
+                channelsWithDetails.push({
+                    ...blacklistedChannel,
+                    channel_name: 'Unknown Channel',
+                    message_count: 0
+                });
+            }
+        }
+
+        return channelsWithDetails;
+
+    } catch (error) {
+        console.error('Error getting blacklisted channels with details:', error);
+        return [];
+    }
+}
+
+/**
  * Get blacklisted channels
  */
 async function getBlacklistedChannels() {
@@ -267,26 +321,31 @@ async function renderChannels() {
 /**
  * Render blacklisted channels
  */
+/**
+ * Render blacklisted channels with detailed information
+ */
 async function renderBlacklistedChannels() {
-    const blacklistedChannels = await getBlacklistedChannels();
+    const blacklistedChannels = await getBlacklistedChannelsWithDetails();
     const container = document.getElementById('blacklisted-channels-list');
     
     if (blacklistedChannels.length === 0) {
-        container.innerHTML = '<p class="empty-state">No blacklisted channels</p>';
+        container.innerHTML = '<p class="empty-state">No blacklisted channels or groups</p>';
         return;
     }
     
     container.innerHTML = blacklistedChannels.map(channel => `
         <div class="blacklist-item">
             <div class="blacklist-info">
-                <strong>Channel ID:</strong> ${channel.channel_id}<br>
-                ${channel.channel_name ? `<strong>Name:</strong> ${escapeHtml(channel.channel_name)}<br>` : ''}
-                ${channel.reason ? `<strong>Reason:</strong> ${escapeHtml(channel.reason)}<br>` : ''}
-                <small>Added: ${formatDate(channel.created_at)}</small>
+                <strong>🚫 ${escapeHtml(channel.channel_name || 'Unknown Channel')}</strong><br>
+                <strong>Channel ID:</strong> <code>${channel.channel_id}</code><br>
+                <strong>Type:</strong> ${channel.channel_name && channel.channel_name.includes('Group') ? 'Group' : 'Channel'}<br>
+                <strong>Messages Collected:</strong> ${channel.message_count.toLocaleString()}<br>
+                ${channel.reason ? `<strong>Blacklist Reason:</strong> ${escapeHtml(channel.reason)}<br>` : ''}
+                <small>🕒 Blacklisted: ${formatDate(channel.created_at)}</small>
             </div>
             <button onclick="removeChannelFromBlacklistAndRefresh(${channel.channel_id})" 
-                    class="remove-btn">
-                ❌ Remove
+                    class="remove-btn" title="Remove from blacklist">
+                ✅ Unblock
             </button>
         </div>
     `).join('');

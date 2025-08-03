@@ -716,8 +716,27 @@ body {
     line-height: 1.5;
 }
 
+.blacklist-info strong {
+    color: #f8fafc;
+    font-weight: 600;
+}
+
+.blacklist-info code {
+    background: rgba(100, 116, 139, 0.2);
+    color: #94a3b8;
+    padding: 0.125rem 0.25rem;
+    border-radius: 0.25rem;
+    font-family: 'Fira Code', 'Monaco', 'Cascadia Code', monospace;
+    font-size: 0.8rem;
+}
+
+.blacklist-info small {
+    color: #94a3b8;
+    font-size: 0.8rem;
+}
+
 .remove-btn {
-    background: #ef4444;
+    background: #10b981;
     color: white;
     border: none;
     padding: 0.5rem 0.75rem;
@@ -726,10 +745,12 @@ body {
     transition: all 0.2s ease;
     white-space: nowrap;
     font-size: 0.8rem;
+    font-weight: 500;
 }
 
 .remove-btn:hover {
-    background: #dc2626;
+    background: #059669;
+    transform: translateY(-1px);
 }
 
 .empty-state {
