@@ -24,38 +24,76 @@
         </div>
     </nav>
 
-    <!-- Channel filter container -->
-    <div class="filter-container">
-        <label for="channel-filter" class="filter-label">Filter by channel:</label>
-        <select id="channel-filter" class="channel-filter-select">
-            <option value="all">All Channels</option>
-        </select>
-        
-        <label for="tag-filter" class="filter-label">Filter by tag:</label>
-        <select id="tag-filter" class="channel-filter-select">
-            <option value="all">All Tags</option>
-        </select>
+    <!-- Message Feed Header -->
+    <div class="feed-header-container">
+        <div class="feed-header">
+            <h1>📰 Message Feed</h1>
+            <p class="feed-subtitle">Real-time messages from all your channels</p>
+        </div>
+    </div>
+
+    <!-- Filter Controls -->
+    <div class="filter-controls-container">
+        <div class="filter-controls-header">
+            <h2>Filter & View Options</h2>
+            <div class="filter-groups">
+                <div class="filter-group">
+                    <label for="channel-filter" class="filter-label">
+                        <span class="filter-icon">📺</span>
+                        Channel
+                    </label>
+                    <select id="channel-filter" class="modern-select">
+                        <option value="all">All Channels</option>
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label for="tag-filter" class="filter-label">
+                        <span class="filter-icon">🏷️</span>
+                        Tag
+                    </label>
+                    <select id="tag-filter" class="modern-select">
+                        <option value="all">All Tags</option>
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label for="page-size-select" class="filter-label">
+                        <span class="filter-icon">📄</span>
+                        Per Page
+                    </label>
+                    <select id="page-size-select" class="modern-select">
+                        <option value="10">10</option>
+                        <option value="20" selected>20</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                    </select>
+                </div>
+            </div>
+        </div>
     </div>
     
     <!-- Main message feed container -->
-    <div id="message-feed"></div>
+    <div class="feed-content-container">
+        <div id="message-feed" class="message-feed"></div>
+    </div>
     
-    <!-- Pagination controls -->
-    <div id="pagination-container" class="pagination-container">
-        <div class="pagination-controls">
-            <button id="prev-btn" class="pagination-btn" disabled>Previous</button>
-            <span id="page-info" class="page-info">Page 1</span>
-            <button id="next-btn" class="pagination-btn">Next</button>
-        </div>
-        
-        <div class="page-size-control">
-            <label for="page-size-select">Messages per page:</label>
-            <select id="page-size-select" class="page-size-select">
-                <option value="10">10</option>
-                <option value="20" selected>20</option>
-                <option value="50">50</option>
-                <option value="100">100</option>
-            </select>
+    <!-- Enhanced Pagination controls -->
+    <div class="pagination-wrapper">
+        <div class="pagination-container">
+            <div class="pagination-info">
+                <span id="page-info" class="page-info">Page 1</span>
+            </div>
+            <div class="pagination-controls">
+                <button id="prev-btn" class="pagination-btn" disabled>
+                    <span class="btn-icon">⬅️</span>
+                    Previous
+                </button>
+                <button id="next-btn" class="pagination-btn">
+                    Next
+                    <span class="btn-icon">➡️</span>
+                </button>
+            </div>
         </div>
     </div>
     
