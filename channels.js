@@ -98,18 +98,37 @@ async function getAllChannels() {
  */
 async function getBlacklistedChannelsWithDetails() {
     try {
+        console.log('🔍 Fetching blacklisted channels...');
+        
         // Get blacklisted channels
         const { data: blacklisted, error: blacklistedError } = await supabase
             .from('blacklisted_channels')
             .select('*')
             .order('created_at', { ascending: false });
 
-        if (blacklistedError) throw blacklistedError;
+        console.log('📊 Raw blacklisted channels response:', { data: blacklisted, error: blacklistedError });
+        
+        if (blacklistedError) {
+            console.error('❌ Error fetching blacklisted channels:', blacklistedError);
+            throw blacklistedError;
+        }
+
+        console.log(`✅ Found ${blacklisted?.length || 0} blacklisted channels in database`);
+        
+        // If no blacklisted channels found, return empty array
+        if (!blacklisted || blacklisted.length === 0) {
+            console.log('⚪ No blacklisted channels found');
+            return [];
+        }
 
         // Get channel details from messages table
         const channelsWithDetails = [];
         
+        console.log(`🔍 Processing ${blacklisted.length} blacklisted channels for details...`);
+        
         for (const blacklistedChannel of blacklisted) {
+            console.log(`   Processing channel ID: ${blacklistedChannel.channel_id}`);
+            
             // Get channel info from messages table
             const { data: channelInfo, error: channelError } = await supabase
                 .from('messages')
@@ -117,27 +136,41 @@ async function getBlacklistedChannelsWithDetails() {
                 .eq('channel_id', blacklistedChannel.channel_id)
                 .limit(1);
 
+            console.log(`   Messages query result:`, { data: channelInfo, error: channelError });
+
             if (!channelError && channelInfo && channelInfo.length > 0) {
+                console.log(`   ✅ Found channel info in messages table`);
+                
                 // Get message count for this channel
                 const { count: messageCount, error: countError } = await supabase
                     .from('messages')
                     .select('*', { count: 'exact', head: true })
                     .eq('channel_id', blacklistedChannel.channel_id);
 
-                channelsWithDetails.push({
+                const channelDetails = {
                     ...blacklistedChannel,
                     channel_name: channelInfo[0].channel_name,
                     message_count: countError ? 0 : (messageCount || 0)
-                });
+                };
+                
+                console.log(`   📝 Adding channel with details:`, channelDetails);
+                channelsWithDetails.push(channelDetails);
             } else {
+                console.log(`   ⚠️  Channel not found in messages, using unknown name`);
+                
                 // Channel not found in messages, still show basic info
-                channelsWithDetails.push({
+                const channelDetails = {
                     ...blacklistedChannel,
                     channel_name: 'Unknown Channel',
                     message_count: 0
-                });
+                };
+                
+                console.log(`   📝 Adding unknown channel:`, channelDetails);
+                channelsWithDetails.push(channelDetails);
             }
         }
+
+        console.log(`🎯 Final channels with details (${channelsWithDetails.length}):`, channelsWithDetails);
 
         return channelsWithDetails;
 
@@ -368,13 +401,20 @@ async function renderChannels() {
  * Render blacklisted channels with detailed information
  */
 async function renderBlacklistedChannels() {
+    console.log('🎨 Starting to render blacklisted channels...');
+    
     const blacklistedChannels = await getBlacklistedChannelsWithDetails();
+    console.log('🔍 Blacklisted channels received for rendering:', blacklistedChannels);
+    
     const container = document.getElementById('blacklisted-channels-list');
     
     if (blacklistedChannels.length === 0) {
+        console.log('⚪ No blacklisted channels to display - showing empty state');
         container.innerHTML = '<p class="empty-state">No blacklisted channels or groups</p>';
         return;
     }
+    
+    console.log(`✅ Rendering ${blacklistedChannels.length} blacklisted channels`);
     
     container.innerHTML = blacklistedChannels.map(channel => `
         <div class="blacklist-item">
@@ -495,6 +535,23 @@ async function refreshAll() {
  * Initialize page
  */
 document.addEventListener('DOMContentLoaded', async () => {
+    console.log('🚀 Page loaded - starting initialization...');
+    
+    // Check authentication first
+    if (typeof isAuthenticated === 'function') {
+        const authResult = isAuthenticated();
+        console.log('🔐 Authentication check result:', authResult);
+        
+        if (!authResult) {
+            console.log('❌ User not authenticated - redirecting to login');
+            window.location.href = 'login.html';
+            return;
+        }
+        
+        console.log('✅ User authenticated - proceeding with page setup');
+    } else {
+        console.log('⚠️  Authentication function not available - proceeding without auth check');
+    }
     // Set up tab switching
     document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.addEventListener('click', () => {
