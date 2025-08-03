@@ -206,9 +206,59 @@ async function handleCleanup(channelId, channelName) {
     }
 }
 
+async function handleClearAllMessages() {
+    const confirmText = "⚠️ DANGER: This will delete ALL messages from ALL channels!\n\nThis action is irreversible and will permanently remove all your data.\n\nType 'DELETE ALL' to confirm:";
+    const userInput = prompt(confirmText);
+    
+    if (userInput === 'DELETE ALL') {
+        try {
+            console.log('🗑️ Starting complete database cleanup...');
+            
+            // Show loading state on the clear button
+            const clearBtn = document.getElementById('clear-all-btn');
+            const originalText = clearBtn.innerHTML;
+            clearBtn.innerHTML = '<span class="clear-icon">⏳</span>Deleting...';
+            clearBtn.disabled = true;
+            
+            // Delete all messages
+            const { error } = await supabase
+                .from('messages')
+                .delete()
+                .neq('message_id', 0); // This deletes all rows (neq with impossible value)
+            
+            if (error) {
+                console.error('❌ Error during cleanup:', error);
+                alert(`Error deleting messages: ${error.message}`);
+            } else {
+                console.log('✅ All messages deleted successfully');
+                alert('🗑️ All messages have been permanently deleted from the database.');
+                
+                // Reload all data
+                await Promise.all([loadChannels(), loadDashboardStats()]);
+            }
+            
+            // Restore button state
+            clearBtn.innerHTML = originalText;
+            clearBtn.disabled = false;
+            
+        } catch (error) {
+            console.error('❌ Unexpected error during cleanup:', error);
+            alert('An unexpected error occurred during cleanup. Please check the console.');
+            
+            // Restore button state
+            const clearBtn = document.getElementById('clear-all-btn');
+            clearBtn.innerHTML = '<span class="clear-icon">🗑️</span>Clear All Messages';
+            clearBtn.disabled = false;
+        }
+    } else if (userInput !== null) {
+        alert('Cleanup cancelled. You must type "DELETE ALL" exactly to confirm.');
+    }
+}
+
 function setupSortControls() {
     const sortByNameBtn = document.getElementById('sort-by-name');
     const sortByCountBtn = document.getElementById('sort-by-count');
+    const clearAllBtn = document.getElementById('clear-all-btn');
 
     sortByNameBtn.addEventListener('click', () => {
         currentSort = 'name';
@@ -223,6 +273,9 @@ function setupSortControls() {
         sortByNameBtn.classList.remove('active');
         renderChannelList();
     });
+    
+    // Add clear all button functionality
+    clearAllBtn.addEventListener('click', handleClearAllMessages);
 }
 
 // --- INITIALIZATION ---

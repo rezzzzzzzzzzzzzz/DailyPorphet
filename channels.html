@@ -20,11 +20,6 @@
         </div>
     </nav>
 
-    <!-- Main heading container -->
-    <div class="filter-container">
-        <h1>Channel Management</h1>
-    </div>
-
     <!-- Dashboard Stats -->
     <div id="dashboard-stats" class="dashboard-stats-container">
         <div class="stats-grid">
@@ -55,19 +50,25 @@
     <!-- Sorting and Filter Controls -->
     <div class="controls-container">
         <div class="controls-header">
-            <h2>Channel Overview</h2>
-            <div class="sort-controls">
-                <span class="sort-label">Sort by:</span>
-                <div class="sort-buttons">
-                    <button id="sort-by-name" class="sort-btn active">
-                        <span class="sort-icon">🔤</span>
-                        Name
-                    </button>
-                    <button id="sort-by-count" class="sort-btn">
-                        <span class="sort-icon">📊</span>
-                        Message Count
-                    </button>
+            <h2>Channel Management</h2>
+            <div class="controls-actions">
+                <div class="sort-controls">
+                    <span class="sort-label">Sort by:</span>
+                    <div class="sort-buttons">
+                        <button id="sort-by-name" class="sort-btn active">
+                            <span class="sort-icon">🔤</span>
+                            Name
+                        </button>
+                        <button id="sort-by-count" class="sort-btn">
+                            <span class="sort-icon">📊</span>
+                            Message Count
+                        </button>
+                    </div>
                 </div>
+                <button id="clear-all-btn" class="clear-all-btn">
+                    <span class="clear-icon">🗑️</span>
+                    Clear All Messages
+                </button>
             </div>
         </div>
     </div>

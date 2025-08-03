@@ -873,7 +873,7 @@ h2 {
 
 .dashboard-stats-container {
     max-width: 1200px;
-    margin: 0 auto 3rem auto;
+    margin: 2rem auto 3rem auto;
     padding: 0 2rem;
 }
 
@@ -1047,14 +1047,14 @@ h2 {
     padding: 2rem;
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items: flex-start;
     flex-wrap: wrap;
-    gap: 1.5rem;
+    gap: 2rem;
 }
 
 .controls-header h2 {
     color: #f8fafc;
-    font-size: 1.5rem;
+    font-size: 1.8rem;
     font-weight: 600;
     margin: 0;
     background: linear-gradient(135deg, #60a5fa 0%, #a78bfa 100%);
@@ -1063,11 +1063,49 @@ h2 {
     background-clip: text;
 }
 
+.controls-actions {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+    flex-wrap: wrap;
+}
+
 .sort-controls {
     display: flex;
     align-items: center;
     gap: 1rem;
     flex-wrap: wrap;
+}
+
+.clear-all-btn {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.75rem;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    white-space: nowrap;
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.25);
+}
+
+.clear-all-btn:hover {
+    background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(239, 68, 68, 0.4);
+}
+
+.clear-all-btn:active {
+    transform: translateY(0);
+}
+
+.clear-icon {
+    font-size: 1rem;
 }
 
 .sort-label {
@@ -1144,6 +1182,12 @@ h2 {
         padding: 1.5rem;
     }
     
+    .controls-actions {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 1.5rem;
+    }
+    
     .sort-controls {
         justify-content: center;
         flex-direction: column;
@@ -1152,6 +1196,12 @@ h2 {
     
     .sort-buttons {
         justify-content: center;
+    }
+    
+    .clear-all-btn {
+        justify-content: center;
+        width: 100%;
+        padding: 1rem;
     }
 }
 
