@@ -8,6 +8,17 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <!-- Navigation Header -->
+    <nav class="nav-header">
+        <div class="nav-container">
+            <a href="index.html" class="nav-logo">Rezziter</a>
+            <div class="nav-links">
+                <a href="index.html" class="nav-link">Message Feed</a>
+                <a href="channels.html" class="nav-link active">Manage Channels</a>
+            </div>
+        </div>
+    </nav>
+
     <!-- Main heading container -->
     <div class="filter-container">
         <h1>Channel Management</h1>
@@ -29,11 +40,6 @@
     <!-- Channel Grid Container -->
     <div id="channel-grid" class="channel-grid-container">
         <!-- Channel cards will be populated here by channels.js -->
-    </div>
-
-    <!-- Back to main page link -->
-    <div class="pagination-container">
-        <a href="index.html" class="pagination-btn" style="text-decoration: none;">Back to Message Feed</a>
     </div>
 
     <script src="channels.js"></script>

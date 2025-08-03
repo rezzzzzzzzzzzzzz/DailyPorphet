@@ -12,6 +12,17 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <!-- Navigation Header -->
+    <nav class="nav-header">
+        <div class="nav-container">
+            <a href="index.html" class="nav-logo">Rezziter</a>
+            <div class="nav-links">
+                <a href="index.html" class="nav-link active">Message Feed</a>
+                <a href="channels.html" class="nav-link">Manage Channels</a>
+            </div>
+        </div>
+    </nav>
+
     <!-- Channel filter container -->
     <div class="filter-container">
         <label for="channel-filter" class="filter-label">Filter by channel:</label>
@@ -45,11 +56,6 @@
                 <option value="100">100</option>
             </select>
         </div>
-    </div>
-    
-    <!-- Navigation to channel management -->
-    <div style="text-align: center; margin-bottom: 2rem;">
-        <a href="channels.html" class="pagination-btn" style="text-decoration: none;">Manage Channels</a>
     </div>
     
     <!-- Custom JavaScript -->
