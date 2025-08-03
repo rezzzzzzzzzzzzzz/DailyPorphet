@@ -4,11 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Rezziter - Channel Management</title>
-    
-    <!-- Supabase JS Client via CDN -->
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-    
-    <!-- Custom CSS -->
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -16,16 +12,30 @@
     <div class="filter-container">
         <h1>Channel Management</h1>
     </div>
-    
-    <!-- Channel list container -->
-    <div id="channel-list"></div>
-    
+
+    <!-- Dashboard Stats (from previous step) -->
+    <div id="dashboard-stats" class="message-item" style="margin-bottom: 2rem;">
+        <p class="loading">Loading Dashboard Stats...</p>
+    </div>
+
+    <!-- Sorting and Filter Controls -->
+    <div class="controls-container">
+        <div id="sort-controls">
+            <button id="sort-by-name" class="sort-btn active">Sort by Name</button>
+            <button id="sort-by-count" class="sort-btn">Sort by Count</button>
+        </div>
+    </div>
+
+    <!-- Channel Grid Container -->
+    <div id="channel-grid" class="channel-grid-container">
+        <!-- Channel cards will be populated here by channels.js -->
+    </div>
+
     <!-- Back to main page link -->
     <div class="pagination-container">
         <a href="index.html" class="pagination-btn" style="text-decoration: none;">Back to Message Feed</a>
     </div>
-    
-    <!-- Custom JavaScript -->
+
     <script src="channels.js"></script>
 </body>
 </html>

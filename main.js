@@ -52,6 +52,7 @@ function renderMessages(messages) {
         const messageText = document.createElement('p');
         messageText.textContent = message.message_text;
         messageText.className = 'message-text';
+        messageText.dir = 'auto';
         
         // Append header and text to message container
         messageDiv.appendChild(header);
