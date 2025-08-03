@@ -5,6 +5,7 @@
 // Replace these placeholder values with your actual Supabase project credentials
 const SUPABASE_URL = 'https://ifdmncyrdvfxkeyzwcgr.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlmZG1uY3lyZHZmeGtleXp3Y2dyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQyMDM5NjMsImV4cCI6MjA2OTc3OTk2M30.B6h3TVKkRYW637P-NfZio_0vCQWEtN70-Z5UA_H26uE';
+
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // Pagination state
@@ -12,6 +13,7 @@ let currentPage = 1;
 let pageSize = 20;
 let totalMessages = 0;
 let currentChannelFilter = 'all';
+let currentTagFilter = 'all';
 
 /**
  * Render messages to the page
@@ -168,6 +170,64 @@ async function populateChannelFilter() {
 }
 
 /**
+ * Populate the tag filter dropdown with all available tags
+ */
+async function populateTagFilter() {
+    try {
+        console.log('🔄 Populating tag filter...');
+        
+        // Fetch all tags from the channels table
+        const { data, error } = await supabase
+            .from('channels')
+            .select('tags');
+        
+        if (error) {
+            console.error('❌ Error fetching channel tags:', error);
+            return;
+        }
+        
+        // Process tags to create a flat, unique, and sorted array
+        const allTags = new Set();
+        if (data) {
+            data.forEach(row => {
+                if (row.tags && Array.isArray(row.tags)) {
+                    row.tags.forEach(tag => {
+                        if (tag && tag.trim()) {
+                            allTags.add(tag.trim());
+                        }
+                    });
+                }
+            });
+        }
+        
+        const uniqueTags = Array.from(allTags).sort();
+        
+        console.log(`✅ Found ${uniqueTags.length} unique tags`);
+        
+        // Get the select element
+        const tagSelect = document.getElementById('tag-filter');
+        
+        // Clear existing options except "All Tags"
+        while (tagSelect.children.length > 1) {
+            tagSelect.removeChild(tagSelect.lastChild);
+        }
+        
+        // Add option for each unique tag
+        uniqueTags.forEach(tagName => {
+            const option = document.createElement('option');
+            option.value = tagName;
+            option.textContent = tagName;
+            tagSelect.appendChild(option);
+        });
+        
+        console.log('✅ Tag filter populated successfully');
+        
+    } catch (error) {
+        console.error('❌ Unexpected error populating tag filter:', error);
+    }
+}
+
+/**
  * Update pagination controls based on current state
  */
 function updatePaginationControls() {
@@ -190,11 +250,19 @@ function updatePaginationControls() {
  * Get total message count for pagination
  * @param {string} channelName - Optional channel name filter
  */
-async function getTotalMessageCount(channelName = null) {
+async function getTotalMessageCount(channelName = null, tagName = null) {
     try {
         let query = supabase
             .from('messages')
             .select('*', { count: 'exact', head: true });
+        
+        // If tag filter is specified, use relational query
+        if (tagName && tagName !== 'all') {
+            query = supabase
+                .from('messages')
+                .select('*, channels!inner(tags)', { count: 'exact', head: true })
+                .contains('channels.tags', [tagName]);
+        }
         
         // Apply channel filter if specified
         if (channelName && channelName !== 'all') {
@@ -221,26 +289,36 @@ async function getTotalMessageCount(channelName = null) {
  * @param {number} size - Number of messages per page
  * @param {string} channelName - Optional channel name filter
  */
-async function fetchMessages(page = currentPage, size = pageSize, channelName = currentChannelFilter) {
+async function fetchMessages(page = currentPage, size = pageSize, channelName = currentChannelFilter, tagName = currentTagFilter) {
     try {
-        const filterText = channelName && channelName !== 'all' ? ` (filtered by: ${channelName})` : '';
-        console.log(`🔄 Fetching messages - Page ${page}, Size ${size}${filterText}...`);
+        const filterText = channelName && channelName !== 'all' ? ` (filtered by channel: ${channelName})` : '';
+        const tagFilterText = tagName && tagName !== 'all' ? ` (filtered by tag: ${tagName})` : '';
+        console.log(`🔄 Fetching messages - Page ${page}, Size ${size}${filterText}${tagFilterText}...`);
         
         // Show loading indicator
         showLoading();
         
-        // Get total count for pagination (with same filter)
-        totalMessages = await getTotalMessageCount(channelName);
+        // Get total count for pagination (with same filters)
+        totalMessages = await getTotalMessageCount(channelName, tagName);
         
         // Calculate offset for pagination (Supabase uses 0-based indexing)
         const offset = (page - 1) * size;
         const rangeEnd = offset + size - 1;
         
-        // Build query with optional channel filter
+        // Build query with optional filters
         let query = supabase
             .from('messages')
             .select('*')
             .order('sent_at', { ascending: false });
+        
+        // If tag filter is specified, use relational query
+        if (tagName && tagName !== 'all') {
+            query = supabase
+                .from('messages')
+                .select('*, channels!inner(tags)')
+                .contains('channels.tags', [tagName])
+                .order('sent_at', { ascending: false });
+        }
         
         // Apply channel filter if specified
         if (channelName && channelName !== 'all') {
@@ -278,6 +356,7 @@ async function fetchMessages(page = currentPage, size = pageSize, channelName = 
         currentPage = page;
         pageSize = size;
         currentChannelFilter = channelName;
+        currentTagFilter = tagName;
         
         // Render messages to the page
         renderMessages(data);
@@ -299,7 +378,7 @@ async function fetchMessages(page = currentPage, size = pageSize, channelName = 
  */
 function goToPreviousPage() {
     if (currentPage > 1) {
-        fetchMessages(currentPage - 1, pageSize, currentChannelFilter);
+        fetchMessages(currentPage - 1, pageSize, currentChannelFilter, currentTagFilter);
     }
 }
 
@@ -309,7 +388,7 @@ function goToPreviousPage() {
 function goToNextPage() {
     const totalPages = Math.ceil(totalMessages / pageSize);
     if (currentPage < totalPages) {
-        fetchMessages(currentPage + 1, pageSize, currentChannelFilter);
+        fetchMessages(currentPage + 1, pageSize, currentChannelFilter, currentTagFilter);
     }
 }
 
@@ -320,7 +399,7 @@ function changePageSize(newSize) {
     const newSizeNum = parseInt(newSize);
     if (newSizeNum && newSizeNum > 0) {
         // Reset to page 1 when changing page size
-        fetchMessages(1, newSizeNum, currentChannelFilter);
+        fetchMessages(1, newSizeNum, currentChannelFilter, currentTagFilter);
     }
 }
 
@@ -337,7 +416,23 @@ function handleChannelFilterChange() {
     currentPage = 1;
     
     // Fetch messages with new filter
-    fetchMessages(1, pageSize, selectedChannel);
+    fetchMessages(1, pageSize, selectedChannel, currentTagFilter);
+}
+
+/**
+ * Handle tag filter dropdown change
+ */
+function handleTagFilterChange() {
+    const tagSelect = document.getElementById('tag-filter');
+    const selectedTag = tagSelect.value;
+    
+    console.log(`🔄 Tag filter changed to: ${selectedTag}`);
+    
+    // Reset to page 1 when filter changes
+    currentPage = 1;
+    
+    // Fetch messages with new filter
+    fetchMessages(1, pageSize, currentChannelFilter, selectedTag);
 }
 
 /**
@@ -361,6 +456,10 @@ function setupEventListeners() {
     // Channel filter
     const channelFilter = document.getElementById('channel-filter');
     channelFilter.addEventListener('change', handleChannelFilterChange);
+    
+    // Tag filter
+    const tagFilter = document.getElementById('tag-filter');
+    tagFilter.addEventListener('change', handleTagFilterChange);
     
     console.log('✅ Event listeners setup complete');
 }
@@ -406,8 +505,8 @@ async function initializeApp() {
     const connectionOk = await testConnection();
     
     if (connectionOk) {
-        // Populate channel filter dropdown
-        await populateChannelFilter();
+        // Populate both filters concurrently for better performance
+        await Promise.all([populateChannelFilter(), populateTagFilter()]);
         
         // Fetch and display messages with pagination
         await fetchMessages();

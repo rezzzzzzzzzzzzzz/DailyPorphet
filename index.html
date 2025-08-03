@@ -12,23 +12,16 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <!-- Navigation header -->
-    <nav class="navbar">
-        <div class="nav-container">
-            <h1 class="nav-title">🗞️ Rezziter</h1>
-            <div class="nav-links">
-                <a href="index.html" class="nav-link active">Messages</a>
-                <a href="channels.html" class="nav-link">Channels</a>
-                <button onclick="logout()" class="logout-btn">Logout</button>
-            </div>
-        </div>
-    </nav>
-
     <!-- Channel filter container -->
     <div class="filter-container">
         <label for="channel-filter" class="filter-label">Filter by channel:</label>
         <select id="channel-filter" class="channel-filter-select">
             <option value="all">All Channels</option>
+        </select>
+        
+        <label for="tag-filter" class="filter-label">Filter by tag:</label>
+        <select id="tag-filter" class="channel-filter-select">
+            <option value="all">All Tags</option>
         </select>
     </div>
     
@@ -37,7 +30,7 @@
     
     <!-- Pagination controls -->
     <div id="pagination-container" class="pagination-container">
-                <div class="pagination-controls">
+        <div class="pagination-controls">
             <button id="prev-btn" class="pagination-btn" disabled>Previous</button>
             <span id="page-info" class="page-info">Page 1</span>
             <button id="next-btn" class="pagination-btn">Next</button>
@@ -53,14 +46,10 @@
             </select>
         </div>
     </div>
-
-    <!-- Include configuration and authentication -->
-    <script src="config.local.js"></script>
-    <script src="auth.js"></script>
-    <!-- Include main functionality -->
-    <script src="main.js"></script>
-</body>
-</html>
+    
+    <!-- Navigation to channel management -->
+    <div style="text-align: center; margin-bottom: 2rem;">
+        <a href="channels.html" class="pagination-btn" style="text-decoration: none;">Manage Channels</a>
     </div>
     
     <!-- Custom JavaScript -->

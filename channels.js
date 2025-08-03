@@ -1,636 +1,208 @@
-// Channels management functionality for Rezziter
+// Rezziter - Channel Management JavaScript
 
-// Initialize Supabase client (same as main.js)
+// Initialize Supabase client
+// NOTE: These are public keys and are safe to expose in frontend code
+// Replace these placeholder values with your actual Supabase project credentials
 const SUPABASE_URL = 'https://ifdmncyrdvfxkeyzwcgr.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlmZG1uY3lyZHZmeGtleXp3Y2dyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQyMDM5NjMsImV4cCI6MjA2OTc3OTk2M30.B6h3TVKkRYW637P-NfZio_0vCQWEtN70-Z5UA_H26uE';
+
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 /**
- * Get channel statistics
+ * Load and display all unique channels from the messages table
  */
-async function getChannelStats() {
+async function loadChannels() {
+    const channelListDiv = document.getElementById('channel-list');
+    
+    // Show loading message
+    channelListDiv.innerHTML = '<div class="message-item"><p>Loading...</p></div>';
+    
     try {
-        // Get unique channels count
-        const { data: channels, error: channelsError } = await supabase
-            .from('messages')
-            .select('channel_id, channel_name')
-            .order('channel_name');
-
-        if (channelsError) throw channelsError;
-
-        const uniqueChannels = [...new Map(channels.map(ch => [ch.channel_id, ch])).values()];
-
-        // Get blacklisted channels count
-        const { count: blacklistedCount, error: blacklistedError } = await supabase
-            .from('blacklisted_channels')
-            .select('*', { count: 'exact', head: true });
-
-        if (blacklistedError) throw blacklistedError;
-
-        // Get total messages count
-        const { count: messagesCount, error: messagesError } = await supabase
-            .from('messages')
-            .select('*', { count: 'exact', head: true });
-
-        if (messagesError) throw messagesError;
-
-        return {
-            totalChannels: uniqueChannels.length,
-            blacklistedChannels: blacklistedCount || 0,
-            totalMessages: messagesCount || 0
-        };
-
-    } catch (error) {
-        console.error('Error getting channel stats:', error);
-        return {
-            totalChannels: 0,
-            blacklistedChannels: 0,
-            totalMessages: 0
-        };
-    }
-}
-
-/**
- * Get all channels with message counts and latest message info
- */
-async function getAllChannels() {
-    try {
+        // Fetch all channel_id and channel_name pairs from messages table
         const { data, error } = await supabase
             .from('messages')
-            .select('channel_id, channel_name, sent_at')
-            .order('sent_at', { ascending: false });
-
-        if (error) throw error;
-
-        // Group by channel and get stats
-        const channelStats = {};
+            .select('channel_id, channel_name');
         
-        data.forEach(message => {
-            const channelId = message.channel_id;
-            
-            if (!channelStats[channelId]) {
-                channelStats[channelId] = {
-                    id: channelId,
-                    name: message.channel_name,
-                    messageCount: 0,
-                    latestMessage: null
-                };
-            }
-            
-            channelStats[channelId].messageCount++;
-            
-            if (!channelStats[channelId].latestMessage || 
-                new Date(message.sent_at) > new Date(channelStats[channelId].latestMessage)) {
-                channelStats[channelId].latestMessage = message.sent_at;
-            }
-        });
-
-        return Object.values(channelStats).sort((a, b) => b.messageCount - a.messageCount);
-
-    } catch (error) {
-        console.error('Error getting channels:', error);
-        return [];
-    }
-}
-
-/**
- * Get blacklisted channels with detailed information
- */
-async function getBlacklistedChannelsWithDetails() {
-    try {
-        console.log('🔍 Fetching blacklisted channels...');
-        
-        // Get blacklisted channels
-        const { data: blacklisted, error: blacklistedError } = await supabase
-            .from('blacklisted_channels')
-            .select('*')
-            .order('created_at', { ascending: false });
-
-        console.log('📊 Raw blacklisted channels response:', { data: blacklisted, error: blacklistedError });
-        
-        if (blacklistedError) {
-            console.error('❌ Error fetching blacklisted channels:', blacklistedError);
-            throw blacklistedError;
-        }
-
-        console.log(`✅ Found ${blacklisted?.length || 0} blacklisted channels in database`);
-        
-        // If no blacklisted channels found, return empty array
-        if (!blacklisted || blacklisted.length === 0) {
-            console.log('⚪ No blacklisted channels found');
-            return [];
-        }
-
-        // Get channel details from messages table
-        const channelsWithDetails = [];
-        
-        console.log(`🔍 Processing ${blacklisted.length} blacklisted channels for details...`);
-        
-        for (const blacklistedChannel of blacklisted) {
-            console.log(`   Processing channel ID: ${blacklistedChannel.channel_id}`);
-            
-            // Get channel info from messages table
-            const { data: channelInfo, error: channelError } = await supabase
-                .from('messages')
-                .select('channel_id, channel_name')
-                .eq('channel_id', blacklistedChannel.channel_id)
-                .limit(1);
-
-            console.log(`   Messages query result:`, { data: channelInfo, error: channelError });
-
-            if (!channelError && channelInfo && channelInfo.length > 0) {
-                console.log(`   ✅ Found channel info in messages table`);
-                
-                // Get message count for this channel
-                const { count: messageCount, error: countError } = await supabase
-                    .from('messages')
-                    .select('*', { count: 'exact', head: true })
-                    .eq('channel_id', blacklistedChannel.channel_id);
-
-                const channelDetails = {
-                    ...blacklistedChannel,
-                    channel_name: channelInfo[0].channel_name,
-                    message_count: countError ? 0 : (messageCount || 0)
-                };
-                
-                console.log(`   📝 Adding channel with details:`, channelDetails);
-                channelsWithDetails.push(channelDetails);
-            } else {
-                console.log(`   ⚠️  Channel not found in messages, using unknown name`);
-                
-                // Channel not found in messages, still show basic info
-                const channelDetails = {
-                    ...blacklistedChannel,
-                    channel_name: 'Unknown Channel',
-                    message_count: 0
-                };
-                
-                console.log(`   📝 Adding unknown channel:`, channelDetails);
-                channelsWithDetails.push(channelDetails);
-            }
-        }
-
-        console.log(`🎯 Final channels with details (${channelsWithDetails.length}):`, channelsWithDetails);
-
-        return channelsWithDetails;
-
-    } catch (error) {
-        console.error('Error getting blacklisted channels with details:', error);
-        return [];
-    }
-}
-
-/**
- * Get blacklisted channels
- */
-async function getBlacklistedChannels() {
-    try {
-        const { data, error } = await supabase
-            .from('blacklisted_channels')
-            .select('*')
-            .order('created_at', { ascending: false });
-
-        if (error) throw error;
-        return data || [];
-
-    } catch (error) {
-        console.error('Error getting blacklisted channels:', error);
-        return [];
-    }
-}
-
-/**
- * Get blacklisted keywords
- */
-async function getBlacklistedKeywords() {
-    try {
-        const { data, error } = await supabase
-            .from('blacklisted_keywords')
-            .select('*')
-            .order('created_at', { ascending: false });
-
-        if (error) throw error;
-        return data || [];
-
-    } catch (error) {
-        console.error('Error getting blacklisted keywords:', error);
-        return [];
-    }
-}
-
-/**
- * Add channel to blacklist
- */
-async function addChannelToBlacklist(channelId, reason = '') {
-    try {
-        // First check if the channel ID is valid
-        if (!channelId || isNaN(channelId)) {
-            console.error('Invalid channel ID:', channelId);
-            return false;
-        }
-
-        const channelIdInt = parseInt(channelId);
-        
-        // Check if channel is already blacklisted
-        const { data: existing, error: checkError } = await supabase
-            .from('blacklisted_channels')
-            .select('channel_id')
-            .eq('channel_id', channelIdInt)
-            .single();
-
-        if (checkError && checkError.code !== 'PGRST116') { // PGRST116 = no rows found
-            console.error('Error checking existing channel:', checkError);
-            return false;
-        }
-
-        if (existing) {
-            console.error('Channel already blacklisted:', channelIdInt);
-            alert('This channel is already blacklisted!');
-            return false;
-        }
-
-        // Try to insert with all possible columns, but handle missing columns gracefully
-        const insertData = { channel_id: channelIdInt };
-        
-        // Try to add reason if the column exists
-        if (reason && reason.trim()) {
-            insertData.reason = reason.trim();
-        }
-
-        const { data, error } = await supabase
-            .from('blacklisted_channels')
-            .insert([insertData]);
-
         if (error) {
-            console.error('Database error:', error);
-            throw error;
-        }
-        
-        return true;
-
-    } catch (error) {
-        console.error('Error adding channel to blacklist:', error);
-        
-        // Provide more specific error messages
-        if (error.message.includes('duplicate key')) {
-            alert('This channel is already blacklisted!');
-        } else if (error.message.includes('column') && error.message.includes('does not exist')) {
-            alert('Database schema issue. Please contact the administrator.');
-        } else {
-            alert('Failed to add channel to blacklist. Please check the channel ID and try again.');
-        }
-        
-        return false;
-    }
-}
-
-/**
- * Add keyword to blacklist
- */
-async function addKeywordToBlacklist(keyword, reason = '') {
-    try {
-        const { data, error } = await supabase
-            .from('blacklisted_keywords')
-            .insert([
-                {
-                    keyword: keyword.trim().toLowerCase(),
-                    reason: reason.trim() || null
-                }
-            ]);
-
-        if (error) throw error;
-        return true;
-
-    } catch (error) {
-        console.error('Error adding keyword to blacklist:', error);
-        return false;
-    }
-}
-
-/**
- * Remove channel from blacklist
- */
-async function removeChannelFromBlacklist(channelId) {
-    try {
-        const { error } = await supabase
-            .from('blacklisted_channels')
-            .delete()
-            .eq('channel_id', parseInt(channelId));
-
-        if (error) throw error;
-        return true;
-
-    } catch (error) {
-        console.error('Error removing channel from blacklist:', error);
-        return false;
-    }
-}
-
-/**
- * Remove keyword from blacklist
- */
-async function removeKeywordFromBlacklist(keyword) {
-    try {
-        const { error } = await supabase
-            .from('blacklisted_keywords')
-            .delete()
-            .eq('keyword', keyword);
-
-        if (error) throw error;
-        return true;
-
-    } catch (error) {
-        console.error('Error removing keyword from blacklist:', error);
-        return false;
-    }
-}
-
-/**
- * Render channel statistics
- */
-async function renderStats() {
-    const stats = await getChannelStats();
-    
-    document.getElementById('total-channels').textContent = stats.totalChannels;
-    document.getElementById('blacklisted-channels').textContent = stats.blacklistedChannels;
-    document.getElementById('total-messages').textContent = stats.totalMessages;
-}
-
-/**
- * Render channels grid
- */
-async function renderChannels() {
-    const channels = await getAllChannels();
-    const channelsGrid = document.getElementById('channels-grid');
-    
-    if (channels.length === 0) {
-        channelsGrid.innerHTML = '<p class="empty-state">No channels found. Messages will appear here after collection starts.</p>';
-        return;
-    }
-    
-    channelsGrid.innerHTML = channels.map(channel => `
-        <div class="channel-card">
-            <div class="channel-header">
-                <h3 class="channel-name">${escapeHtml(channel.name)}</h3>
-                <span class="channel-id">ID: ${channel.id}</span>
-            </div>
-            <div class="channel-stats">
-                <div class="stat">
-                    <span class="stat-label">Messages:</span>
-                    <span class="stat-value">${channel.messageCount}</span>
-                </div>
-                <div class="stat">
-                    <span class="stat-label">Latest:</span>
-                    <span class="stat-value">${formatDate(channel.latestMessage)}</span>
-                </div>
-            </div>
-            <div class="channel-actions">
-                <button onclick="addChannelToBlacklistFromCard(${channel.id}, '${escapeHtml(channel.name)}')" 
-                        class="blacklist-btn">
-                    ⚫ Blacklist
-                </button>
-            </div>
-        </div>
-    `).join('');
-}
-
-/**
- * Render blacklisted channels
- */
-/**
- * Render blacklisted channels with detailed information
- */
-async function renderBlacklistedChannels() {
-    console.log('🎨 Starting to render blacklisted channels...');
-    
-    const blacklistedChannels = await getBlacklistedChannelsWithDetails();
-    console.log('🔍 Blacklisted channels received for rendering:', blacklistedChannels);
-    
-    const container = document.getElementById('blacklisted-channels-list');
-    
-    if (blacklistedChannels.length === 0) {
-        console.log('⚪ No blacklisted channels to display - showing empty state');
-        container.innerHTML = '<p class="empty-state">No blacklisted channels or groups</p>';
-        return;
-    }
-    
-    console.log(`✅ Rendering ${blacklistedChannels.length} blacklisted channels`);
-    
-    container.innerHTML = blacklistedChannels.map(channel => `
-        <div class="blacklist-item">
-            <div class="blacklist-info">
-                <strong>🚫 ${escapeHtml(channel.channel_name || 'Unknown Channel')}</strong><br>
-                <strong>Channel ID:</strong> <code>${channel.channel_id}</code><br>
-                <strong>Type:</strong> ${channel.channel_name && channel.channel_name.includes('Group') ? 'Group' : 'Channel'}<br>
-                <strong>Messages Collected:</strong> ${channel.message_count.toLocaleString()}<br>
-                ${channel.reason ? `<strong>Blacklist Reason:</strong> ${escapeHtml(channel.reason)}<br>` : ''}
-                <small>🕒 Blacklisted: ${formatDate(channel.created_at)}</small>
-            </div>
-            <button onclick="removeChannelFromBlacklistAndRefresh(${channel.channel_id})" 
-                    class="remove-btn" title="Remove from blacklist">
-                ✅ Unblock
-            </button>
-        </div>
-    `).join('');
-}
-
-/**
- * Render blacklisted keywords
- */
-async function renderBlacklistedKeywords() {
-    const blacklistedKeywords = await getBlacklistedKeywords();
-    const container = document.getElementById('blacklisted-keywords-list');
-    
-    if (blacklistedKeywords.length === 0) {
-        container.innerHTML = '<p class="empty-state">No blacklisted keywords</p>';
-        return;
-    }
-    
-    container.innerHTML = blacklistedKeywords.map(keyword => `
-        <div class="blacklist-item">
-            <div class="blacklist-info">
-                <strong>Keyword:</strong> "${escapeHtml(keyword.keyword)}"<br>
-                ${keyword.reason ? `<strong>Reason:</strong> ${escapeHtml(keyword.reason)}<br>` : ''}
-                <small>Added: ${formatDate(keyword.created_at)}</small>
-            </div>
-            <button onclick="removeKeywordFromBlacklistAndRefresh('${escapeHtml(keyword.keyword)}')" 
-                    class="remove-btn">
-                ❌ Remove
-            </button>
-        </div>
-    `).join('');
-}
-
-/**
- * Helper functions
- */
-function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-}
-
-function formatDate(dateString) {
-    if (!dateString) return 'Unknown';
-    return new Date(dateString).toLocaleDateString();
-}
-
-/**
- * Event handlers
- */
-async function addChannelToBlacklistFromCard(channelId, channelName) {
-    const reason = prompt(`Add "${channelName}" to blacklist?\n\nOptional reason:`);
-    if (reason !== null) { // User didn't cancel
-        const success = await addChannelToBlacklist(channelId, reason);
-        if (success) {
-            alert('Channel added to blacklist successfully!');
-            refreshAll();
-        } else {
-            alert('Failed to add channel to blacklist. It may already be blacklisted.');
-        }
-    }
-}
-
-async function removeChannelFromBlacklistAndRefresh(channelId) {
-    if (confirm('Remove this channel from blacklist?')) {
-        const success = await removeChannelFromBlacklist(channelId);
-        if (success) {
-            refreshAll();
-        } else {
-            alert('Failed to remove channel from blacklist.');
-        }
-    }
-}
-
-async function removeKeywordFromBlacklistAndRefresh(keyword) {
-    if (confirm(`Remove "${keyword}" from blacklist?`)) {
-        const success = await removeKeywordFromBlacklist(keyword);
-        if (success) {
-            refreshAll();
-        } else {
-            alert('Failed to remove keyword from blacklist.');
-        }
-    }
-}
-
-/**
- * Refresh all data
- */
-async function refreshAll() {
-    document.getElementById('loading').style.display = 'block';
-    document.getElementById('channels-grid').style.display = 'none';
-    
-    await Promise.all([
-        renderStats(),
-        renderChannels(),
-        renderBlacklistedChannels(),
-        renderBlacklistedKeywords()
-    ]);
-    
-    document.getElementById('loading').style.display = 'none';
-    document.getElementById('channels-grid').style.display = 'grid';
-}
-
-/**
- * Initialize page
- */
-document.addEventListener('DOMContentLoaded', async () => {
-    console.log('🚀 Page loaded - starting initialization...');
-    
-    // Check authentication first
-    if (typeof isAuthenticated === 'function') {
-        const authResult = isAuthenticated();
-        console.log('🔐 Authentication check result:', authResult);
-        
-        if (!authResult) {
-            console.log('❌ User not authenticated - redirecting to login');
-            window.location.href = 'login.html';
+            console.error('Error fetching channels:', error);
+            channelListDiv.innerHTML = '<div class="message-item"><p>Error loading channels.</p></div>';
             return;
         }
         
-        console.log('✅ User authenticated - proceeding with page setup');
-    } else {
-        console.log('⚠️  Authentication function not available - proceeding without auth check');
-    }
-    // Set up tab switching
-    document.querySelectorAll('.tab-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const tabId = btn.getAttribute('data-tab');
-            
-            // Update active tab button
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            
-            // Update active tab content
-            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-            document.getElementById(tabId).classList.add('active');
-        });
-    });
-    
-    // Set up form handlers
-    document.getElementById('add-channel-form').addEventListener('submit', async (e) => {
-        e.preventDefault();
+        // Fetch existing tags from channels table
+        const { data: channelTags, error: tagsError } = await supabase
+            .from('channels')
+            .select('channel_id, tags');
         
-        const channelId = document.getElementById('channel-id').value.trim();
-        const reason = document.getElementById('channel-reason').value.trim();
-        
-        if (!channelId) {
-            alert('Please enter a channel ID');
-            return;
-        }
-
-        // Validate channel ID format
-        if (!/^-?\d+$/.test(channelId)) {
-            alert('Channel ID must be a number (e.g., 1871162121 or -1001871162121)');
-            return;
+        if (tagsError) {
+            console.error('Error fetching channel tags:', tagsError);
+            // Continue without tags rather than failing completely
         }
         
-        // Show loading state
-        const submitButton = e.target.querySelector('button[type="submit"]');
-        const originalText = submitButton.textContent;
-        submitButton.textContent = 'Adding...';
-        submitButton.disabled = true;
+        // Create a Map to store existing tags by channel_id
+        const tagsMap = new Map();
+        if (channelTags) {
+            channelTags.forEach(row => {
+                tagsMap.set(row.channel_id, row.tags || []);
+            });
+        }
         
-        try {
-            const success = await addChannelToBlacklist(channelId, reason);
-            if (success) {
-                document.getElementById('add-channel-form').reset();
-                await Promise.all([renderBlacklistedChannels(), renderStats()]);
-                alert('Channel added to blacklist successfully!');
+        // Create a Map to get unique channels by channel_id
+        const channelMap = new Map();
+        data.forEach(row => {
+            if (!channelMap.has(row.channel_id)) {
+                channelMap.set(row.channel_id, {
+                    id: row.channel_id,
+                    name: row.channel_name
+                });
             }
-            // Error messages are handled in the addChannelToBlacklist function
-        } catch (error) {
-            console.error('Unexpected error:', error);
-            alert('An unexpected error occurred. Please try again.');
-        } finally {
-            // Restore button state
-            submitButton.textContent = originalText;
-            submitButton.disabled = false;
+        });
+        
+        // Convert Map to array and sort by channel name
+        const uniqueChannels = Array.from(channelMap.values()).sort((a, b) => a.name.localeCompare(b.name));
+        
+        // Clear loading message
+        channelListDiv.innerHTML = '';
+        
+        // Render each channel
+        uniqueChannels.forEach(channel => {
+            const channelDiv = document.createElement('div');
+            channelDiv.className = 'message-item';
+            
+            // Get existing tags for this channel
+            const existingTags = tagsMap.get(channel.id) || [];
+            const tagsValue = existingTags.join(', ');
+            
+            channelDiv.innerHTML = `
+                <h2>${channel.name}</h2>
+                <div style="margin: 10px 0;">
+                    <label for="tags-${channel.id}">Tags:</label>
+                    <input type="text" id="tags-${channel.id}" value="${tagsValue}" placeholder="Enter tags separated by commas (e.g., news, tech)" style="width: 300px; margin-left: 10px; padding: 5px;">
+                </div>
+                <div style="margin: 10px 0;">
+                    <button class="pagination-btn" onclick="handleTagUpdate(${channel.id}, '${channel.name.replace(/'/g, "\\'")}')">Save Tags</button>
+                    <button class="pagination-btn" style="background-color: #ef4444; margin-left: 10px;" onclick="handleCleanup(${channel.id}, '${channel.name.replace(/'/g, "\\'")}')">Clean Up</button>
+                </div>
+            `;
+            
+            channelListDiv.appendChild(channelDiv);
+        });
+        
+    } catch (error) {
+        console.error('Unexpected error:', error);
+        channelListDiv.innerHTML = '<div class="message-item"><p>Unexpected error occurred.</p></div>';
+    }
+}
+
+/**
+ * Handle updating tags for a specific channel
+ * @param {number} channelId - The channel ID to update tags for
+ * @param {string} channelName - The channel name for the database record
+ */
+async function handleTagUpdate(channelId, channelName) {
+    try {
+        // Find the tag input element
+        const tagsInput = document.getElementById(`tags-${channelId}`);
+        if (!tagsInput) {
+            alert('Error: Could not find tag input field.');
+            return;
         }
-    });
-    
-    document.getElementById('add-keyword-form').addEventListener('submit', async (e) => {
-        e.preventDefault();
         
-        const keyword = document.getElementById('keyword-text').value.trim();
-        const reason = document.getElementById('keyword-reason').value.trim();
+        // Read and process the tag string
+        const tagsString = tagsInput.value;
+        const tagsArray = tagsString
+            .split(',')
+            .map(tag => tag.trim())
+            .filter(tag => tag.length > 0);
         
-        if (!keyword) return;
+        // Upsert the record into the channels table
+        const { error } = await supabase
+            .from('channels')
+            .upsert({
+                channel_id: channelId,
+                channel_name: channelName,
+                tags: tagsArray
+            }, { onConflict: 'channel_id' });
         
-        const success = await addKeywordToBlacklist(keyword, reason);
-        if (success) {
-            document.getElementById('add-keyword-form').reset();
-            renderBlacklistedKeywords();
-            renderStats();
-            alert('Keyword added to blacklist successfully!');
+        if (error) {
+            console.error('Error saving tags:', error);
+            alert(`Failed to save tags for "${channelName}". Error: ${error.message}`);
         } else {
-            alert('Failed to add keyword to blacklist.');
+            alert(`Successfully saved tags for "${channelName}".`);
         }
-    });
+    } catch (error) {
+        console.error('Unexpected error saving tags:', error);
+        alert(`Unexpected error occurred while saving tags for "${channelName}". Please try again.`);
+    }
+}
+
+/**
+ * Save tags for a specific channel (legacy function - calls handleTagUpdate)
+ * @param {number} channelId - The channel ID to save tags for
+ */
+function saveTags(channelId) {
+    // This function is kept for backwards compatibility
+    // Find the channel name from the current display
+    const channelElement = document.querySelector(`#tags-${channelId}`);
+    const channelName = channelElement ? 
+        channelElement.closest('.message-item').querySelector('h2').textContent : 
+        `Channel ${channelId}`;
     
-    // Set up refresh button
-    document.getElementById('refresh-btn').addEventListener('click', refreshAll);
+    handleTagUpdate(channelId, channelName);
+}
+
+/**
+ * Handle cleanup of messages for a specific channel
+ * @param {number} channelId - The channel ID to clean up
+ * @param {string} channelName - The channel name for the confirmation dialog
+ */
+async function handleCleanup(channelId, channelName) {
+    // Show confirmation dialog with channel name and warning
+    const confirmed = confirm(
+        `Are you sure you want to delete all messages from "${channelName}"?\n\n` +
+        `This action is PERMANENT and CANNOT be undone.\n\n` +
+        `All messages from this channel will be permanently removed from the database.`
+    );
     
-    // Initial load
-    await refreshAll();
-});
+    if (!confirmed) {
+        return; // User cancelled the operation
+    }
+    
+    try {
+        // Delete all messages for this channel
+        const { error } = await supabase
+            .from('messages')
+            .delete()
+            .eq('channel_id', channelId);
+        
+        if (error) {
+            console.error('Error deleting messages:', error);
+            alert(`Failed to delete messages from "${channelName}". Error: ${error.message}`);
+        } else {
+            alert(`Successfully deleted all messages from "${channelName}".`);
+            // Optionally reload the channels to refresh the display
+            loadChannels();
+        }
+    } catch (error) {
+        console.error('Unexpected error during cleanup:', error);
+        alert(`Unexpected error occurred while deleting messages from "${channelName}". Please try again.`);
+    }
+}
+
+/**
+ * Clean up channel (legacy function - calls handleCleanup)
+ * @param {number} channelId - The channel ID to clean up
+ */
+function cleanUpChannel(channelId) {
+    // This function is kept for backwards compatibility
+    // Find the channel name from the current display
+    const channelElement = document.querySelector(`#tags-${channelId}`);
+    const channelName = channelElement ? 
+        channelElement.closest('.message-item').querySelector('h2').textContent : 
+        `Channel ${channelId}`;
+    
+    handleCleanup(channelId, channelName);
+}
+
+// Initialize the page when DOM is loaded
+document.addEventListener('DOMContentLoaded', loadChannels);

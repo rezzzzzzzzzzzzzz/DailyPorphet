@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rezziter - Channels</title>
+    <title>Rezziter - Channel Management</title>
     
     <!-- Supabase JS Client via CDN -->
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
@@ -12,100 +12,20 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <!-- Navigation header -->
-    <nav class="navbar">
-        <div class="nav-container">
-            <h1 class="nav-title">🗞️ Rezziter - Channel Management</h1>
-            <div class="nav-links">
-                <a href="index.html" class="nav-link">Messages</a>
-                <a href="channels.html" class="nav-link active">Channels</a>
-                <button onclick="logout()" class="logout-btn">Logout</button>
-            </div>
-        </div>
-    </nav>
-
-    <!-- Main content -->
-    <div class="container">
-        <!-- Statistics card -->
-        <div class="stats-card">
-            <h2>📊 Channel Statistics</h2>
-            <div class="stats-grid">
-                <div class="stat-item">
-                    <span class="stat-number" id="total-channels">-</span>
-                    <span class="stat-label">Total Channels</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-number" id="blacklisted-channels">-</span>
-                    <span class="stat-label">Blacklisted</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-number" id="total-messages">-</span>
-                    <span class="stat-label">Total Messages</span>
-                </div>
-            </div>
-        </div>
-
-        <!-- Channels list -->
-        <div class="channels-section">
-            <div class="section-header">
-                <h2>📺 Active Channels</h2>
-                <button id="refresh-btn" class="refresh-btn">🔄 Refresh</button>
-            </div>
-            
-            <!-- Loading indicator -->
-            <div id="loading" class="loading">Loading channels...</div>
-            
-            <!-- Channels grid -->
-            <div id="channels-grid" class="channels-grid" style="display: none;">
-                <!-- Channels will be populated here -->
-            </div>
-        </div>
-
-        <!-- Blacklist management -->
-        <div class="blacklist-section">
-            <h2>⚫ Blacklist Management</h2>
-            
-            <div class="blacklist-tabs">
-                <button class="tab-btn active" data-tab="channels-tab">Channels</button>
-                <button class="tab-btn" data-tab="keywords-tab">Keywords</button>
-            </div>
-
-            <!-- Blacklisted Channels Tab -->
-            <div id="channels-tab" class="tab-content active">
-                <div class="add-form">
-                    <h3>Add Channel to Blacklist</h3>
-                    <form id="add-channel-form" class="inline-form">
-                        <input type="text" id="channel-id" placeholder="Channel ID (e.g., -1001234567890)" required>
-                        <input type="text" id="channel-reason" placeholder="Reason (optional)">
-                        <button type="submit">Add</button>
-                    </form>
-                </div>
-                <div id="blacklisted-channels-list" class="blacklist-list">
-                    <!-- Blacklisted channels will be populated here -->
-                </div>
-            </div>
-
-            <!-- Blacklisted Keywords Tab -->
-            <div id="keywords-tab" class="tab-content">
-                <div class="add-form">
-                    <h3>Add Keyword to Blacklist</h3>
-                    <form id="add-keyword-form" class="inline-form">
-                        <input type="text" id="keyword-text" placeholder="Keyword or phrase" required>
-                        <input type="text" id="keyword-reason" placeholder="Reason (optional)">
-                        <button type="submit">Add</button>
-                    </form>
-                </div>
-                <div id="blacklisted-keywords-list" class="blacklist-list">
-                    <!-- Blacklisted keywords will be populated here -->
-                </div>
-            </div>
-        </div>
+    <!-- Main heading container -->
+    <div class="filter-container">
+        <h1>Channel Management</h1>
     </div>
-
-    <!-- Include configuration and auth check -->
-    <script src="config.local.js"></script>
-    <script src="auth.js"></script>
-    <!-- Include channels functionality -->
+    
+    <!-- Channel list container -->
+    <div id="channel-list"></div>
+    
+    <!-- Back to main page link -->
+    <div class="pagination-container">
+        <a href="index.html" class="pagination-btn" style="text-decoration: none;">Back to Message Feed</a>
+    </div>
+    
+    <!-- Custom JavaScript -->
     <script src="channels.js"></script>
 </body>
 </html>
