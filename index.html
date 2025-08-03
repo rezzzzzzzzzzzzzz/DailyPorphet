@@ -12,6 +12,18 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <!-- Navigation header -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <h1 class="nav-title">🗞️ Rezziter</h1>
+            <div class="nav-links">
+                <a href="index.html" class="nav-link active">Messages</a>
+                <a href="channels.html" class="nav-link">Channels</a>
+                <button onclick="logout()" class="logout-btn">Logout</button>
+            </div>
+        </div>
+    </nav>
+
     <!-- Channel filter container -->
     <div class="filter-container">
         <label for="channel-filter" class="filter-label">Filter by channel:</label>
@@ -25,7 +37,7 @@
     
     <!-- Pagination controls -->
     <div id="pagination-container" class="pagination-container">
-        <div class="pagination-controls">
+                <div class="pagination-controls">
             <button id="prev-btn" class="pagination-btn" disabled>Previous</button>
             <span id="page-info" class="page-info">Page 1</span>
             <button id="next-btn" class="pagination-btn">Next</button>
@@ -40,6 +52,14 @@
                 <option value="100">100</option>
             </select>
         </div>
+    </div>
+
+    <!-- Include authentication check -->
+    <script src="auth.js"></script>
+    <!-- Include main functionality -->
+    <script src="main.js"></script>
+</body>
+</html>
     </div>
     
     <!-- Custom JavaScript -->
