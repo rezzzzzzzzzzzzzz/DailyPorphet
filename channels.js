@@ -190,20 +190,63 @@ async function getBlacklistedKeywords() {
  */
 async function addChannelToBlacklist(channelId, reason = '') {
     try {
+        // First check if the channel ID is valid
+        if (!channelId || isNaN(channelId)) {
+            console.error('Invalid channel ID:', channelId);
+            return false;
+        }
+
+        const channelIdInt = parseInt(channelId);
+        
+        // Check if channel is already blacklisted
+        const { data: existing, error: checkError } = await supabase
+            .from('blacklisted_channels')
+            .select('channel_id')
+            .eq('channel_id', channelIdInt)
+            .single();
+
+        if (checkError && checkError.code !== 'PGRST116') { // PGRST116 = no rows found
+            console.error('Error checking existing channel:', checkError);
+            return false;
+        }
+
+        if (existing) {
+            console.error('Channel already blacklisted:', channelIdInt);
+            alert('This channel is already blacklisted!');
+            return false;
+        }
+
+        // Try to insert with all possible columns, but handle missing columns gracefully
+        const insertData = { channel_id: channelIdInt };
+        
+        // Try to add reason if the column exists
+        if (reason && reason.trim()) {
+            insertData.reason = reason.trim();
+        }
+
         const { data, error } = await supabase
             .from('blacklisted_channels')
-            .insert([
-                {
-                    channel_id: parseInt(channelId),
-                    reason: reason.trim() || null
-                }
-            ]);
+            .insert([insertData]);
 
-        if (error) throw error;
+        if (error) {
+            console.error('Database error:', error);
+            throw error;
+        }
+        
         return true;
 
     } catch (error) {
         console.error('Error adding channel to blacklist:', error);
+        
+        // Provide more specific error messages
+        if (error.message.includes('duplicate key')) {
+            alert('This channel is already blacklisted!');
+        } else if (error.message.includes('column') && error.message.includes('does not exist')) {
+            alert('Database schema issue. Please contact the administrator.');
+        } else {
+            alert('Failed to add channel to blacklist. Please check the channel ID and try again.');
+        }
+        
         return false;
     }
 }
@@ -474,16 +517,38 @@ document.addEventListener('DOMContentLoaded', async () => {
         const channelId = document.getElementById('channel-id').value.trim();
         const reason = document.getElementById('channel-reason').value.trim();
         
-        if (!channelId) return;
+        if (!channelId) {
+            alert('Please enter a channel ID');
+            return;
+        }
+
+        // Validate channel ID format
+        if (!/^-?\d+$/.test(channelId)) {
+            alert('Channel ID must be a number (e.g., 1871162121 or -1001871162121)');
+            return;
+        }
         
-        const success = await addChannelToBlacklist(channelId, reason);
-        if (success) {
-            document.getElementById('add-channel-form').reset();
-            renderBlacklistedChannels();
-            renderStats();
-            alert('Channel added to blacklist successfully!');
-        } else {
-            alert('Failed to add channel to blacklist. Please check the channel ID.');
+        // Show loading state
+        const submitButton = e.target.querySelector('button[type="submit"]');
+        const originalText = submitButton.textContent;
+        submitButton.textContent = 'Adding...';
+        submitButton.disabled = true;
+        
+        try {
+            const success = await addChannelToBlacklist(channelId, reason);
+            if (success) {
+                document.getElementById('add-channel-form').reset();
+                await Promise.all([renderBlacklistedChannels(), renderStats()]);
+                alert('Channel added to blacklist successfully!');
+            }
+            // Error messages are handled in the addChannelToBlacklist function
+        } catch (error) {
+            console.error('Unexpected error:', error);
+            alert('An unexpected error occurred. Please try again.');
+        } finally {
+            // Restore button state
+            submitButton.textContent = originalText;
+            submitButton.disabled = false;
         }
     });
     
