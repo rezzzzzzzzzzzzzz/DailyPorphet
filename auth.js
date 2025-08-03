@@ -1,9 +1,25 @@
 // Simple password-based authentication for Rezziter
-// Password is loaded from environment or configuration
+// For GitHub Pages: Password is loaded from config.local.js (not committed)
+// For other hosting: Uses environment variable
 
-// For development: set VITE_AUTH_PASSWORD in .env.local
-// For production: set as environment variable in hosting platform
-const CORRECT_PASSWORD = import.meta.env.VITE_AUTH_PASSWORD || 'default_password_change_me';
+// Try to get password from config first (GitHub Pages), then environment (other hosting)
+function getAuthPassword() {
+    // GitHub Pages: Check for config file
+    if (window.REZZITER_CONFIG && window.REZZITER_CONFIG.authPassword) {
+        return window.REZZITER_CONFIG.authPassword;
+    }
+    
+    // Other hosting: Check if environment variables are available
+    if (window.ENV && window.ENV.VITE_AUTH_PASSWORD) {
+        return window.ENV.VITE_AUTH_PASSWORD;
+    }
+    
+    // Fallback warning
+    console.warn('No password configured! Create config.local.js with your password');
+    return 'default_password_change_me';
+}
+
+const CORRECT_PASSWORD = getAuthPassword();
 const SESSION_KEY = 'rezziter_authenticated';
 const SESSION_DURATION = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
 
