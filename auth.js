@@ -1,7 +1,9 @@
 // Simple password-based authentication for Rezziter
-// Password: rezziter2025
+// Password is loaded from environment or configuration
 
-const CORRECT_PASSWORD = 'rezziter2025';
+// For development: set VITE_AUTH_PASSWORD in .env.local
+// For production: set as environment variable in hosting platform
+const CORRECT_PASSWORD = import.meta.env.VITE_AUTH_PASSWORD || 'default_password_change_me';
 const SESSION_KEY = 'rezziter_authenticated';
 const SESSION_DURATION = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
 
