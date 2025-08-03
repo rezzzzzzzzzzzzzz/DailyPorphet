@@ -15,6 +15,7 @@
             <div class="nav-links">
                 <a href="index.html" class="nav-link">Message Feed</a>
                 <a href="channels.html" class="nav-link active">Manage Channels</a>
+                <button onclick="logout()" class="nav-link logout-btn">Logout</button>
             </div>
         </div>
     </nav>
@@ -42,6 +43,10 @@
         <!-- Channel cards will be populated here by channels.js -->
     </div>
 
+    <!-- Load configuration and authentication -->
+    <script src="config.local.js"></script>
+    <script src="auth.js"></script>
+    
     <script src="channels.js"></script>
 </body>
 </html>
