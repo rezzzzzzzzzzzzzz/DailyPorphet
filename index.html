@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rezziter</title>
+    
+    <!-- Supabase JS Client via CDN -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Channel filter container -->
+    <div class="filter-container">
+        <label for="channel-filter" class="filter-label">Filter by channel:</label>
+        <select id="channel-filter" class="channel-filter-select">
+            <option value="all">All Channels</option>
+        </select>
+    </div>
+    
+    <!-- Main message feed container -->
+    <div id="message-feed"></div>
+    
+    <!-- Pagination controls -->
+    <div id="pagination-container" class="pagination-container">
+        <div class="pagination-controls">
+            <button id="prev-btn" class="pagination-btn" disabled>Previous</button>
+            <span id="page-info" class="page-info">Page 1</span>
+            <button id="next-btn" class="pagination-btn">Next</button>
+        </div>
+        
+        <div class="page-size-control">
+            <label for="page-size-select">Messages per page:</label>
+            <select id="page-size-select" class="page-size-select">
+                <option value="10">10</option>
+                <option value="20" selected>20</option>
+                <option value="50">50</option>
+                <option value="100">100</option>
+            </select>
+        </div>
+    </div>
+    
+    <!-- Custom JavaScript -->
+    <script src="main.js"></script>
+</body>
+</html>
