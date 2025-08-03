@@ -257,12 +257,25 @@ async function getTotalMessageCount(channelName = null, tagName = null) {
             .from('messages')
             .select('*', { count: 'exact', head: true });
         
-        // If tag filter is specified, use relational query
+        // If tag filter is specified, first get channel IDs with that tag
         if (tagName && tagName !== 'all') {
-            query = supabase
-                .from('messages')
-                .select('*, channels!inner(tags)', { count: 'exact', head: true })
-                .contains('channels.tags', [tagName]);
+            // Get channels that have the specified tag
+            const { data: channelsWithTag, error: tagError } = await supabase
+                .from('channels')
+                .select('channel_id')
+                .contains('tags', [tagName]);
+            
+            if (tagError) {
+                console.error('❌ Error fetching channels with tag:', tagError);
+                return 0;
+            }
+            
+            if (!channelsWithTag || channelsWithTag.length === 0) {
+                return 0; // No channels have this tag
+            }
+            
+            const channelIds = channelsWithTag.map(ch => ch.channel_id);
+            query = query.in('channel_id', channelIds);
         }
         
         // Apply channel filter if specified
@@ -312,13 +325,28 @@ async function fetchMessages(page = currentPage, size = pageSize, channelName = 
             .select('*')
             .order('sent_at', { ascending: false });
         
-        // If tag filter is specified, use relational query
+        // If tag filter is specified, first get channel IDs with that tag
         if (tagName && tagName !== 'all') {
-            query = supabase
-                .from('messages')
-                .select('*, channels!inner(tags)')
-                .contains('channels.tags', [tagName])
-                .order('sent_at', { ascending: false });
+            // Get channels that have the specified tag
+            const { data: channelsWithTag, error: tagError } = await supabase
+                .from('channels')
+                .select('channel_id')
+                .contains('tags', [tagName]);
+            
+            if (tagError) {
+                console.error('❌ Error fetching channels with tag:', tagError);
+                throw tagError;
+            }
+            
+            if (!channelsWithTag || channelsWithTag.length === 0) {
+                // No channels have this tag, return empty result
+                renderMessages([]);
+                updatePaginationControls();
+                return;
+            }
+            
+            const channelIds = channelsWithTag.map(ch => ch.channel_id);
+            query = query.in('channel_id', channelIds);
         }
         
         // Apply channel filter if specified
