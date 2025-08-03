@@ -1,0 +1,44 @@
+name: Deploy to GitHub Pages with Secrets
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Create config with secret
+        env:
+          AUTH_PASSWORD: ${{ secrets.AUTH_PASSWORD }}
+        run: |
+          echo "Creating config.local.js with secret password..."
+          echo "window.REZZITER_CONFIG = { 
+            authPassword: '$AUTH_PASSWORD', 
+            sessionDuration: 24 * 60 * 60 * 1000 
+          };" > config.local.js
+          
+          echo "Config created successfully!"
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: '.'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
