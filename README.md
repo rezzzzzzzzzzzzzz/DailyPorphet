@@ -1,2 +1,2 @@
-# Rezziter - Telegram Message Viewer
+# Rezziter
 https://rezzzzzzzzzzzzzz.github.io/DailyPorphet/
