@@ -24,7 +24,11 @@
     </div>
 
     <!-- Load configuration first (GitHub Pages) -->
-    <script src="config.local.js"></script>
+    <script>
+        // Initialize empty config if config.local.js doesn't exist
+        window.REZZITER_CONFIG = window.REZZITER_CONFIG || {};
+    </script>
+    <script src="config.local.js" onerror="console.log('config.local.js not found, using defaults')"></script>
     <script src="auth.js"></script>
 </body>
 </html>
