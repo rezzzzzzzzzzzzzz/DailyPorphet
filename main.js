@@ -1,10 +1,8 @@
 // Rezziter - Frontend JavaScript
 
-// Initialize Supabase client
-// NOTE: These are public keys and are safe to expose in frontend code
-// Replace these placeholder values with your actual Supabase project credentials
-const SUPABASE_URL = 'https://ifdmncyrdvfxkeyzwcgr.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlmZG1uY3lyZHZmeGtleXp3Y2dyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQyMDM5NjMsImV4cCI6MjA2OTc3OTk2M30.B6h3TVKkRYW637P-NfZio_0vCQWEtN70-Z5UA_H26uE';
+// Initialize Supabase client from config (injected by GitHub Actions)
+const SUPABASE_URL = window.REZZITER_CONFIG?.supabaseUrl || '';
+const SUPABASE_ANON_KEY = window.REZZITER_CONFIG?.supabaseAnonKey || '';
 
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 

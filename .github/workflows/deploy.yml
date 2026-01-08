@@ -24,11 +24,20 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Generate config.local.js from secret
+      - name: Generate config.local.js from secrets
         env:
           AUTH_PASSWORD: ${{ secrets.AUTH_PASSWORD }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
         run: |
-          echo "window.REZZITER_CONFIG = { authPassword: '${AUTH_PASSWORD}', sessionDuration: 24 * 60 * 60 * 1000 };" > config.local.js
+          cat > config.local.js << EOF
+          window.REZZITER_CONFIG = {
+            authPassword: '${AUTH_PASSWORD}',
+            supabaseUrl: '${SUPABASE_URL}',
+            supabaseAnonKey: '${SUPABASE_ANON_KEY}',
+            sessionDuration: 24 * 60 * 60 * 1000
+          };
+          EOF
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
